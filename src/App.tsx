@@ -26,7 +26,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Dialog,
   DialogContent,
@@ -196,8 +195,8 @@ const App: React.FC = () => {
       )}>
         <div className="flex flex-col h-full p-6">
           <div className="flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shrink-0">
-              <span className="text-zinc-900 font-black text-xl italic-serif text-center pt-1 pr-1">D</span>
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-white/5">
+              <span className="text-zinc-900 font-bold text-xl italic-serif">D</span>
             </div>
             <AnimatePresence>
               {isSidebarOpen && (
