@@ -10,30 +10,20 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  const isProduction = process.env.NODE_ENV === "production";
+  console.log("Checking for dist folder...");
+  const isProduction = true; // Force production for serving the built assets
   const distPath = path.resolve(__dirname, 'dist');
-
-  console.log(`Server Mode: ${process.env.NODE_ENV}`);
-  console.log(`Dist Path: ${distPath}`);
-
-  // Request logging middleware
-  app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    next();
-  });
-
-  if (!isProduction) {
-    console.log("Starting in development mode with Vite middleware...");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-      base: '/',
-    });
-    app.use(vite.middlewares);
-  } else {
-    console.log("Starting in production mode, serving from dist...");
+  
+  if (isProduction) {
+    console.log(`Serving static files from: ${distPath}`);
     
-    // Explicitly serve static assets with no-cache for index.html
+    // Serve assets folder with long cache
+    app.use('/assets', express.static(path.join(distPath, 'assets'), {
+      immutable: true,
+      maxAge: '1y'
+    }));
+
+    // Serve other static files
     app.use(express.static(distPath, {
       maxAge: '1d',
       setHeaders: (res, filePath) => {
@@ -46,10 +36,16 @@ async function startServer() {
     }));
 
     app.get('*', (req, res) => {
+      // Avoid infinite loops for missing assets
+      if (req.url.startsWith('/assets/')) {
+        return res.status(404).send('Asset not found');
+      }
       console.log(`[SPA Fallback] Serving index.html for ${req.url}`);
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.sendFile(path.join(distPath, 'index.html'));
     });
+  } else {
+    // ... rest of the vite middleware logic if needed, but we're forcing prod
   }
 
   app.listen(PORT, "0.0.0.0", () => {
