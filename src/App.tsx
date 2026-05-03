@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { processFile } from '@/lib/dataProcessor';
+import { cleanData, CleaningOptions } from '@/lib/dataCleaner';
 import { generateDataInsights } from '@/services/geminiService';
 import { Dashboard } from '@/components/Dashboard';
 import { DataRow, DataInsight, ProcessedData } from '@/types';
@@ -20,7 +21,11 @@ import {
   Activity,
   Sparkles,
   Command,
-  Hash
+  Hash,
+  Filter,
+  Trash2,
+  ArrowUpDown,
+  Eraser
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -63,6 +68,46 @@ const App: React.FC = () => {
   const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 4000);
+  };
+
+  const handleCleanData = (options: CleaningOptions) => {
+    if (!fileData) return;
+    
+    try {
+      const cleanedRows = cleanData(fileData.rows, options);
+      const rowsRemoved = fileData.rows.length - cleanedRows.length;
+      
+      setFileData({
+        ...fileData,
+        rows: cleanedRows,
+        summary: {
+          ...fileData.summary,
+          rowCount: cleanedRows.length
+        }
+      });
+      
+      let message = "Data cleaned successfully";
+      if (options.removeDuplicates && rowsRemoved > 0) {
+        message = `Removed ${rowsRemoved} duplicate records`;
+      } else if (options.removeNoise) {
+        message = "Noise and empty values purged";
+      } else if (options.sortBy) {
+        message = `Ordered by ${options.sortBy.column}`;
+      }
+      
+      showNotification(message, 'success');
+      
+      // Re-generate insights if data changed significantly
+      if (rowsRemoved > 0 || options.removeNoise) {
+        setIsGeneratingInsights(true);
+        generateDataInsights(cleanedRows).then(newInsights => {
+          setInsights(newInsights);
+          setIsGeneratingInsights(false);
+        });
+      }
+    } catch (err) {
+      showNotification("Purge failed: " + (err instanceof Error ? err.message : String(err)), 'error');
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -535,7 +580,44 @@ const App: React.FC = () => {
                         <h2 className="text-2xl font-bold italic-serif">Data Registry</h2>
                         <p className="text-xs font-medium text-zinc-500 uppercase tracking-widest mt-1">Raw record inspection mode</p>
                       </div>
-                      <Badge variant="outline" className="font-mono text-[10px]">{fileData.summary.rowCount} RECORDS LOADED</Badge>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 bg-zinc-50 p-1 rounded-xl border border-zinc-100 mr-4">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleCleanData({ removeDuplicates: true, removeNoise: false, trimWhitespace: true })}
+                            className="h-8 text-[10px] uppercase font-bold tracking-widest text-zinc-500 hover:text-zinc-950 px-3"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-2" />
+                            Deduplicate
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleCleanData({ removeDuplicates: false, removeNoise: true, trimWhitespace: true })}
+                            className="h-8 text-[10px] uppercase font-bold tracking-widest text-zinc-500 hover:text-zinc-950 px-3"
+                          >
+                            <Eraser className="w-3.5 h-3.5 mr-2" />
+                            Purge Noise
+                          </Button>
+                          <div className="w-px h-4 bg-zinc-200 mx-1" />
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleCleanData({ 
+                              removeDuplicates: false, 
+                              removeNoise: false, 
+                              trimWhitespace: true,
+                              sortBy: { column: fileData.headers[0], direction: 'asc' }
+                            })}
+                            className="h-8 text-[10px] uppercase font-bold tracking-widest text-zinc-500 hover:text-zinc-950 px-3"
+                          >
+                            <ArrowUpDown className="w-3.5 h-3.5 mr-2" />
+                            Auto Sort
+                          </Button>
+                        </div>
+                        <Badge variant="outline" className="font-mono text-[10px]">{fileData.summary.rowCount} RECORDS LOADED</Badge>
+                      </div>
                     </div>
                     <div className="flex-1 overflow-hidden rounded-2xl border border-zinc-100">
                       <DataGrid data={fileData.rows} />
