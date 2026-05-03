@@ -26,7 +26,8 @@ import {
   Filter,
   Trash2,
   ArrowUpDown,
-  Eraser
+  Eraser,
+  TrendingUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -106,6 +107,8 @@ const App: React.FC = () => {
         message = `Removed ${rowsRemoved} duplicate records`;
       } else if (options.removeIncomplete && rowsRemoved > 0) {
         message = `Removed ${rowsRemoved} incomplete records`;
+      } else if (options.removeOutliers && rowsRemoved > 0) {
+        message = `Excised ${rowsRemoved} statistical outliers`;
       } else if (options.removeNoise) {
         message = "Noise and empty values purged";
       } else if (options.sortBy) {
@@ -633,6 +636,15 @@ const App: React.FC = () => {
                           >
                             <Filter className="w-3.5 h-3.5 mr-2" />
                             Drop Incomplete
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleCleanData({ removeDuplicates: false, removeNoise: false, trimWhitespace: true, removeOutliers: true })}
+                            className="h-8 text-[10px] uppercase font-bold tracking-widest text-zinc-500 hover:text-zinc-950 px-3"
+                          >
+                            <TrendingUp className="w-3.5 h-3.5 mr-2" />
+                            Purge Outliers
                           </Button>
                           <div className="w-px h-4 bg-zinc-200 mx-1" />
                           <Button 

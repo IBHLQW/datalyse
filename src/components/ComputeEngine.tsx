@@ -14,7 +14,8 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  Cell
+  Cell,
+  Line
 } from 'recharts';
 import { 
   Activity, 
@@ -236,6 +237,38 @@ export const ComputeEngine: React.FC<ComputeEngineProps> = ({ data }) => {
     visible: { y: 0, opacity: 1 }
   };
 
+  const dataWithCoords = useMemo(() => {
+    return data.slice(0, 500).map(d => ({ 
+      x: Number(d[scatterX]), 
+      y: Number(d[scatterY]) 
+    })).filter(p => !isNaN(p.x) && !isNaN(p.y));
+  }, [data, scatterX, scatterY]);
+
+  const regressionLine = useMemo(() => {
+    if (dataWithCoords.length < 2) return null;
+    
+    const x = dataWithCoords.map(p => p.x);
+    const y = dataWithCoords.map(p => p.y);
+    
+    // Linear regression: y = mx + b
+    const n = x.length;
+    const sumX = x.reduce((a, b) => a + b, 0);
+    const sumY = y.reduce((a, b) => a + b, 0);
+    const sumXY = x.reduce((a, b, i) => a + b * y[i], 0);
+    const sumX2 = x.reduce((a, b) => a + b * b, 0);
+    
+    const m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const b = (sumY - m * sumX) / n;
+    
+    const minX = Math.min(...x);
+    const maxX = Math.max(...x);
+    
+    return [
+      { x: minX, y: m * minX + b },
+      { x: maxX, y: m * maxX + b }
+    ];
+  }, [dataWithCoords]);
+
   return (
     <motion.div 
       initial="hidden"
@@ -389,17 +422,23 @@ export const ComputeEngine: React.FC<ComputeEngineProps> = ({ data }) => {
                       />
                       <Scatter 
                         name="Data" 
-                        data={data.slice(0, 500).map(d => ({ 
-                          x: Number(d[scatterX]), 
-                          y: Number(d[scatterY]) 
-                        }))} 
+                        data={dataWithCoords} 
                         fill="#18181b" 
                         fillOpacity={0.6}
                       >
-                         {data.slice(0, 500).map((entry, index) => (
+                         {dataWithCoords.map((entry, index) => (
                           <Cell key={`cell-${index}`} className="hover:fill-emerald-500 transition-colors duration-300" />
                         ))}
                       </Scatter>
+
+                      {regressionLine && (
+                        <Scatter 
+                          name="Trend" 
+                          data={regressionLine} 
+                          line={{ stroke: '#10b981', strokeWidth: 2, strokeDasharray: '5 5' }} 
+                          shape={() => <rect width={0} height={0} />}
+                        />
+                      )}
                     </ScatterChart>
                   </ResponsiveContainer>
                 </div>

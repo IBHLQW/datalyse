@@ -5,6 +5,7 @@ export interface CleaningOptions {
   removeNoise: boolean;
   trimWhitespace: boolean;
   removeIncomplete?: boolean;
+  removeOutliers?: boolean;
   sortBy?: {
     column: string;
     direction: 'asc' | 'desc';
@@ -41,7 +42,39 @@ export const cleanData = (rows: DataRow[], options: CleaningOptions): DataRow[] 
     });
   }
 
-  // 2. Remove Duplicates (Now that data is standardized)
+  // 2. Outlier Removal (IQR Method)
+  // This removes rows where ANY numeric field is an outlier
+  if (options.removeOutliers) {
+    const beforeCount = cleaned.length;
+    const numericColumns = Object.keys(cleaned[0] || {}).filter(col => {
+      const vals = cleaned.map(r => r[col]).filter(v => typeof v === 'number');
+      return vals.length > (cleaned.length * 0.5); // Only if mostly numeric
+    });
+
+    numericColumns.forEach(col => {
+      const values = cleaned
+        .map(r => r[col] as number)
+        .filter(v => typeof v === 'number' && !isNaN(v))
+        .sort((a, b) => a - b);
+
+      if (values.length < 4) return;
+
+      const q1 = values[Math.floor(values.length / 4)];
+      const q3 = values[Math.floor(values.length * 3 / 4)];
+      const iqr = q3 - q1;
+      const lowerBound = q1 - 1.5 * iqr;
+      const upperBound = q3 + 1.5 * iqr;
+
+      cleaned = cleaned.filter(row => {
+        const val = row[col];
+        if (typeof val !== 'number') return true;
+        return val >= lowerBound && val <= upperBound;
+      });
+    });
+    console.log(`[Cleaner] Outlier removal removed ${beforeCount - cleaned.length} rows total`);
+  }
+
+  // 3. Remove Duplicates (Now that data is standardized)
   if (options.removeDuplicates) {
     const seen = new Set();
     const beforeCount = cleaned.length;
