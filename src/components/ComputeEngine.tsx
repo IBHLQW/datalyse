@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import html2canvas from 'html2canvas';
 import { 
   ScatterChart, 
   Scatter, 
@@ -38,6 +39,38 @@ interface ComputeEngineProps {
 export const ComputeEngine: React.FC<ComputeEngineProps> = ({ data }) => {
   const [activeSubTab, setActiveSubTab] = useState('scatter');
   const [currentDraft, setCurrentDraft] = useState('');
+  const scatterRef = useRef<HTMLDivElement>(null);
+  const heatmapRef = useRef<HTMLDivElement>(null);
+
+  const exportAsImage = async (ref: React.RefObject<HTMLDivElement | null>, name: string) => {
+    if (!ref.current) return;
+    try {
+      const canvas = await html2canvas(ref.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true
+      });
+      const link = document.createElement('a');
+      link.download = `${name}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error("Export failed:", err);
+    }
+  };
+
+  const exportSVG = (ref: React.RefObject<SVGSVGElement | null>, name: string) => {
+    if (!ref.current) return;
+    const svgData = new XMLSerializer().serializeToString(ref.current);
+    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const svgUrl = URL.createObjectURL(svgBlob);
+    const downloadLink = document.createElement("a");
+    downloadLink.href = svgUrl;
+    downloadLink.download = `${name}.svg`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+  };
   
   // Data Analysis
   const numericHeaders = useMemo(() => {
@@ -302,11 +335,16 @@ export const ComputeEngine: React.FC<ComputeEngineProps> = ({ data }) => {
                       <h3 className="font-bold text-lg">{scatterX} vs {scatterY}</h3>
                       <p className="text-xs text-zinc-400 font-mono tracking-wider">SCATTER_DISTRIBUTION</p>
                     </div>
+                    <div className="flex gap-2">
+                       <Button variant="outline" size="sm" className="rounded-xl h-8 text-[10px] uppercase font-bold" onClick={() => exportAsImage(scatterRef, 'datalyse_scatter')}>
+                          Download PNG
+                       </Button>
+                    </div>
                   </div>
                   <Badge variant="outline" className="font-mono text-[10px]">{data.length} DATA_POINTS</Badge>
                 </div>
-
-                <div className="flex-1 w-full relative">
+                
+                <div ref={scatterRef} className="flex-1 w-full relative bg-white">
                   <ResponsiveContainer width="100%" height="100%">
                     <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
@@ -421,10 +459,15 @@ export const ComputeEngine: React.FC<ComputeEngineProps> = ({ data }) => {
                       <h3 className="font-bold text-lg">Correlation Matrix</h3>
                       <p className="text-xs text-zinc-400 font-mono tracking-wider">INTER-VARIABLE_DYNAMICS</p>
                     </div>
+                    <div className="flex gap-2">
+                       <Button variant="outline" size="sm" className="rounded-xl h-8 text-[10px] uppercase font-bold" onClick={() => exportAsImage(heatmapRef, 'datalyse_heatmap')}>
+                          Download PNG
+                       </Button>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex-1 flex items-center justify-center p-4">
+                <div ref={heatmapRef} className="flex-1 flex items-center justify-center p-4 bg-white">
                   {correlationMatrix ? (
                     <div className="relative" style={{ 
                       display: 'grid', 
@@ -551,7 +594,10 @@ export const ComputeEngine: React.FC<ComputeEngineProps> = ({ data }) => {
                   </div>
                 </div>
 
-                <div className="absolute top-8 right-8 z-10">
+                 <div className="absolute top-8 right-8 z-10 flex gap-2">
+                  <Button variant="outline" size="sm" className="bg-white/80 backdrop-blur-sm rounded-xl h-8 text-[10px] uppercase font-bold" onClick={() => exportSVG(networkRef, 'datalyse_topology')}>
+                      Export SVG
+                  </Button>
                   <div className="bg-zinc-100/80 backdrop-blur-sm p-3 rounded-2xl border border-zinc-200/50 flex items-center gap-2">
                     <MousePointer2 className="w-4 h-4 text-zinc-400" />
                     <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Interactive Stage</span>

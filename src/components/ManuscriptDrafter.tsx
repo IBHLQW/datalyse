@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,11 +54,12 @@ export const ManuscriptDrafter: React.FC<ManuscriptDrafterProps> = ({ data, colu
     }
 
     content += `\n\n## 3. Conclusion\n`;
-    content += `The findings provide a reproducible baseline for further experimentation. The data structure supports multi-variate modeling and high-resolution topological mapping.\n`;
-
-    if (onDraftUpdate) onDraftUpdate(content);
     return content;
-  }, [data, columnName, style, onDraftUpdate]);
+  }, [data, columnName, style]);
+
+  useEffect(() => {
+    if (onDraftUpdate) onDraftUpdate(draft);
+  }, [draft, onDraftUpdate]);
 
   const copyDraft = () => {
     navigator.clipboard.writeText(draft);
