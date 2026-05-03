@@ -10,42 +10,22 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  console.log("Checking for dist folder...");
-  const isProduction = true; // Force production for serving the built assets
+  const isProduction = process.env.NODE_ENV === "production";
   const distPath = path.resolve(__dirname, 'dist');
   
-  if (isProduction) {
-    console.log(`Serving static files from: ${distPath}`);
-    
-    // Serve assets folder with long cache
-    app.use('/assets', express.static(path.join(distPath, 'assets'), {
-      immutable: true,
-      maxAge: '1y'
-    }));
-
-    // Serve other static files
-    app.use(express.static(distPath, {
-      maxAge: '1d',
-      setHeaders: (res, filePath) => {
-        if (filePath.endsWith('index.html')) {
-          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-          res.setHeader('Pragma', 'no-cache');
-          res.setHeader('Expires', '0');
-        }
-      }
-    }));
-
+  if (!isProduction) {
+    console.log("Starting in development mode with Vite middleware...");
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    console.log(`Starting in production mode, serving from: ${distPath}`);
+    app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      // Avoid infinite loops for missing assets
-      if (req.url.startsWith('/assets/')) {
-        return res.status(404).send('Asset not found');
-      }
-      console.log(`[SPA Fallback] Serving index.html for ${req.url}`);
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.sendFile(path.join(distPath, 'index.html'));
     });
-  } else {
-    // ... rest of the vite middleware logic if needed, but we're forcing prod
   }
 
   app.listen(PORT, "0.0.0.0", () => {
