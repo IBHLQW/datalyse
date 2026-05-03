@@ -89,6 +89,8 @@ const App: React.FC = () => {
       let message = "Data cleaned successfully";
       if (options.removeDuplicates && rowsRemoved > 0) {
         message = `Removed ${rowsRemoved} duplicate records`;
+      } else if (options.removeIncomplete && rowsRemoved > 0) {
+        message = `Removed ${rowsRemoved} incomplete records`;
       } else if (options.removeNoise) {
         message = "Noise and empty values purged";
       } else if (options.sortBy) {
@@ -240,8 +242,13 @@ const App: React.FC = () => {
       )}>
         <div className="flex flex-col h-full p-6">
           <div className="flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-white/5">
-              <span className="text-zinc-900 font-bold text-xl italic-serif">D</span>
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-white/5 p-2">
+              <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="20" y="45" width="14" height="35" rx="4" fill="black"/>
+                <rect x="43" y="20" width="14" height="60" rx="4" fill="black"/>
+                <rect x="66" y="32" width="14" height="48" rx="4" fill="black"/>
+                <circle cx="85" cy="85" r="8" fill="black"/>
+              </svg>
             </div>
             <AnimatePresence>
               {isSidebarOpen && (
@@ -599,6 +606,15 @@ const App: React.FC = () => {
                           >
                             <Eraser className="w-3.5 h-3.5 mr-2" />
                             Purge Noise
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleCleanData({ removeDuplicates: false, removeNoise: false, trimWhitespace: true, removeIncomplete: true })}
+                            className="h-8 text-[10px] uppercase font-bold tracking-widest text-zinc-500 hover:text-zinc-950 px-3"
+                          >
+                            <Filter className="w-3.5 h-3.5 mr-2" />
+                            Drop Incomplete
                           </Button>
                           <div className="w-px h-4 bg-zinc-200 mx-1" />
                           <Button 

@@ -4,6 +4,7 @@ export interface CleaningOptions {
   removeDuplicates: boolean;
   removeNoise: boolean;
   trimWhitespace: boolean;
+  removeIncomplete?: boolean;
   sortBy?: {
     column: string;
     direction: 'asc' | 'desc';
@@ -25,7 +26,7 @@ export const cleanData = (rows: DataRow[], options: CleaningOptions): DataRow[] 
   }
 
   // 2. Remove Noise & Trim
-  if (options.removeNoise || options.trimWhitespace) {
+  if (options.removeNoise || options.trimWhitespace || options.removeIncomplete) {
     cleaned = cleaned.map(row => {
       const newRow: DataRow = { ...row };
       Object.keys(newRow).forEach(key => {
@@ -37,7 +38,7 @@ export const cleanData = (rows: DataRow[], options: CleaningOptions): DataRow[] 
         }
 
         // Noise removal (replace empty strings, 'null', 'undefined', etc with null)
-        if (options.removeNoise) {
+        if (options.removeNoise || options.removeIncomplete) {
           const noiseValues = ['', 'null', 'NULL', 'nan', 'NaN', 'undefined', 'undefined'];
           if (val === null || val === undefined || noiseValues.includes(String(val).toLowerCase().trim())) {
             val = null as any;
@@ -49,8 +50,13 @@ export const cleanData = (rows: DataRow[], options: CleaningOptions): DataRow[] 
       return newRow;
     });
 
-    // If removing noise, we might want to filter out rows that are entirely empty
-    if (options.removeNoise) {
+    // Filtering logic
+    if (options.removeIncomplete) {
+      cleaned = cleaned.filter(row => 
+        Object.values(row).every(val => val !== null && val !== undefined && val !== '')
+      );
+    } else if (options.removeNoise) {
+      // Filter out rows that are ENTIRELY empty
       cleaned = cleaned.filter(row => 
         Object.values(row).some(val => val !== null && val !== undefined && val !== '')
       );

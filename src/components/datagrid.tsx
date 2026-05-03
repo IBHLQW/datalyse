@@ -221,24 +221,36 @@ export const DataTable: React.FC<DataTableProps> = ({ data }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-                {filteredAndSortedData.map((row, i) => (
-                  <tr 
-                    key={i} 
-                    className="group hover:bg-zinc-950 transition-all duration-200"
-                  >
-                    {columns.map((col) => (
-                      <td 
-                        key={col} 
-                        className={cn(
-                          "px-6 py-4 text-xs font-mono tracking-tight transition-colors group-hover:text-white",
-                          typeof row[col] === 'number' ? "text-emerald-600 group-hover:text-emerald-400" : "text-zinc-600"
-                        )}
-                      >
-                        {String(row[col])}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
+                {filteredAndSortedData.map((row, i) => {
+                  const hasNulls = Object.values(row).some(val => val === null || val === undefined || val === '');
+                  const isEntirelyNull = Object.values(row).every(val => val === null || val === undefined || val === '');
+
+                  return (
+                    <tr 
+                      key={i} 
+                      className={cn(
+                        "group transition-all duration-200",
+                        hasNulls ? "bg-amber-50/30 hover:bg-zinc-950" : "hover:bg-zinc-950"
+                      )}
+                    >
+                      {columns.map((col) => (
+                        <td 
+                          key={col} 
+                          className={cn(
+                            "px-6 py-4 text-xs font-mono tracking-tight transition-colors group-hover:text-white",
+                            (row[col] === null || row[col] === undefined || row[col] === '') 
+                              ? "text-zinc-300 italic group-hover:text-zinc-500" 
+                              : typeof row[col] === 'number' 
+                                ? "text-emerald-600 group-hover:text-emerald-400" 
+                                : "text-zinc-600"
+                          )}
+                        >
+                          {row[col] === null || row[col] === undefined || row[col] === '' ? 'NULL' : String(row[col])}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             
