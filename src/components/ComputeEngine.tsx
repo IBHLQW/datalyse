@@ -29,6 +29,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { DataRow } from '../types';
 import * as d3 from 'd3';
 import { ManuscriptDrafter } from './ManuscriptDrafter';
+import { ReproducibilityBundle } from './ReproducibilityBundle';
 
 interface ComputeEngineProps {
   data: DataRow[];
@@ -36,6 +37,7 @@ interface ComputeEngineProps {
 
 export const ComputeEngine: React.FC<ComputeEngineProps> = ({ data }) => {
   const [activeSubTab, setActiveSubTab] = useState('scatter');
+  const [currentDraft, setCurrentDraft] = useState('');
   
   // Data Analysis
   const numericHeaders = useMemo(() => {
@@ -570,7 +572,10 @@ export const ComputeEngine: React.FC<ComputeEngineProps> = ({ data }) => {
           )}
 
           {activeSubTab === 'manuscript' && (
-            <ManuscriptDrafter data={data} />
+            <div className="space-y-8">
+              <ReproducibilityBundle data={data} manuscriptContent={currentDraft} />
+              <ManuscriptDrafter data={data} onDraftUpdate={setCurrentDraft} />
+            </div>
           )}
         </motion.div>
       </AnimatePresence>

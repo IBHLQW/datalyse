@@ -1,25 +1,40 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Copy, Check, Download, Zap, BookOpen } from 'lucide-react';
+import { FileText, Copy, Check, Download, Zap, BookOpen, Quote } from 'lucide-react';
 import { motion } from 'motion/react';
 import { DataRow } from '../types';
+
+type CitationStyle = 'nature' | 'science' | 'apa';
 
 interface ManuscriptDrafterProps {
   data: DataRow[];
   columnName?: string;
+  onDraftUpdate?: (content: string) => void;
 }
 
-export const ManuscriptDrafter: React.FC<ManuscriptDrafterProps> = ({ data, columnName }) => {
-  const [copied, setCopied] = React.useState(false);
+export const ManuscriptDrafter: React.FC<ManuscriptDrafterProps> = ({ data, columnName, onDraftUpdate }) => {
+  const [copied, setCopied] = useState(false);
+  const [style, setStyle] = useState<CitationStyle>('nature');
 
   const draft = useMemo(() => {
     const rowCount = data.length;
     const headers = Object.keys(data[0] || {});
     
-    let content = `# Scientific Manuscript Draft\n\n`;
+    let content = '';
+    
+    if (style === 'nature') {
+      content += `# RESEARCH ARTICLE\n\n`;
+      content += `## ABSTRACT\nWe report a high-throughput analysis of ${headers.length} parameters. Our findings demonstrate structural patterns consistent with established experimental paradigms.\n\n`;
+    } else if (style === 'science') {
+      content += `# REPORT\n\n`;
+      content += `## SUMMARY\nMulti-dimensional mapping reveals internal logic within the dataset. Here we describe the methodologies used to isolate signal from biological noise.\n\n`;
+    } else {
+      content += `# Manuscript Draft (APA Style)\n\n`;
+    }
+
     content += `## 1. Materials and Methods\n`;
     content += `Data was ingested and processed using the Datalyse (v3.2) analytical framework. The dataset consists of ${rowCount} observations across ${headers.length} biological/technical variables. `;
     
@@ -34,15 +49,16 @@ export const ManuscriptDrafter: React.FC<ManuscriptDrafterProps> = ({ data, colu
     
     if (columnName) {
        const values = data.map(d => Number(d[columnName])).filter(v => !isNaN(v));
-       const mean = values.reduce((a, b) => a + b, 0) / values.length;
+       const mean = values.reduce((a, b) => a + b, 0) / (values.length || 1);
        content += `For '${columnName}', the observed mean was ${mean.toFixed(4)}. Further investigation of the variance suggests a heterogeneous profile across the sample population. `;
     }
 
     content += `\n\n## 3. Conclusion\n`;
     content += `The findings provide a reproducible baseline for further experimentation. The data structure supports multi-variate modeling and high-resolution topological mapping.\n`;
 
+    if (onDraftUpdate) onDraftUpdate(content);
     return content;
-  }, [data, columnName]);
+  }, [data, columnName, style, onDraftUpdate]);
 
   const copyDraft = () => {
     navigator.clipboard.writeText(draft);
@@ -57,20 +73,29 @@ export const ManuscriptDrafter: React.FC<ManuscriptDrafterProps> = ({ data, colu
           <h3 className="text-2xl font-bold tracking-tight italic-serif">Ghostwriter</h3>
           <p className="text-xs font-mono text-zinc-500 uppercase tracking-widest mt-1">AI-Assisted Manuscript Generation</p>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={copyDraft}
-            className="rounded-xl border-zinc-200 h-10 px-4 font-bold uppercase tracking-widest text-[10px]"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 mr-2" /> : <Copy className="w-3.5 h-3.5 mr-2" />}
-            {copied ? "Copied" : "Copy Markdown"}
-          </Button>
-          <Button className="bg-zinc-950 text-white rounded-xl h-10 px-4 font-bold uppercase tracking-widest text-[10px]">
-            <Download className="w-3.5 h-3.5 mr-2" />
-            Export LaTeX
-          </Button>
+        <div className="flex gap-4">
+          <div className="flex bg-zinc-100 p-1 rounded-xl">
+             {(['nature', 'science', 'apa'] as CitationStyle[]).map(s => (
+               <button
+                key={s}
+                onClick={() => setStyle(s)}
+                className={`px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider rounded-lg transition-all ${style === s ? 'bg-zinc-950 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-600'}`}
+               >
+                 {s}
+               </button>
+             ))}
+          </div>
+          <div className="flex gap-2 border-l border-zinc-200 pl-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={copyDraft}
+              className="rounded-xl border-zinc-200 h-10 px-4 font-bold uppercase tracking-widest text-[10px]"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 mr-2" /> : <Copy className="w-3.5 h-3.5 mr-2" />}
+              {copied ? "Copied" : "Copy Style"}
+            </Button>
+          </div>
         </div>
       </div>
 
