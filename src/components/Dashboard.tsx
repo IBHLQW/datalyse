@@ -43,12 +43,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, insights, isGenerati
   const colCount = data.length > 0 ? Object.keys(data[0]).length : 0;
   
   // Try to find a numeric column for trend
-  const numericKeys = data.length > 0 ? Object.keys(data[0]).filter(k => typeof data[0][k] === 'number') : [];
+  const numericKeys = React.useMemo(() => {
+    if (data.length === 0) return [];
+    return Object.keys(data[0]).filter(key => {
+      const val = data[0][key];
+      return typeof val === 'number' || 
+             (typeof val === 'string' && val.trim() !== '' && !isNaN(Number(val)));
+    });
+  }, [data]);
+  
   const primaryMetric = numericKeys[0] || '';
   
   const chartData = data.slice(0, 20).map((row, i) => ({
     name: i.toString(),
-    value: primaryMetric ? row[primaryMetric] : 0,
+    value: primaryMetric ? Number(row[primaryMetric]) : 0,
   }));
 
   // Statistical calculations
@@ -56,8 +64,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, insights, isGenerati
     if (!primaryMetric || data.length === 0) return null;
     
     const values = data
-      .map(row => row[primaryMetric])
-      .filter(v => typeof v === 'number') as number[];
+      .map(row => Number(row[primaryMetric]))
+      .filter(v => !isNaN(v)) as number[];
     
     if (values.length === 0) return null;
 

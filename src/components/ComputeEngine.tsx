@@ -22,11 +22,13 @@ import {
   Grid3X3, 
   Info, 
   MousePointer2,
-  RefreshCcw
+  RefreshCcw,
+  FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DataRow } from '../types';
 import * as d3 from 'd3';
+import { ManuscriptDrafter } from './ManuscriptDrafter';
 
 interface ComputeEngineProps {
   data: DataRow[];
@@ -38,7 +40,12 @@ export const ComputeEngine: React.FC<ComputeEngineProps> = ({ data }) => {
   // Data Analysis
   const numericHeaders = useMemo(() => {
     if (data.length === 0) return [];
-    return Object.keys(data[0]).filter(key => typeof data[0][key] === 'number');
+    return Object.keys(data[0]).filter(key => {
+      const val = data[0][key];
+      // Robust number detection for both actual numbers and numeric strings
+      return typeof val === 'number' || 
+             (typeof val === 'string' && val.trim() !== '' && !isNaN(Number(val)));
+    });
   }, [data]);
 
   const categoricalHeaders = useMemo(() => {
@@ -59,8 +66,8 @@ export const ComputeEngine: React.FC<ComputeEngineProps> = ({ data }) => {
     numericHeaders.forEach(h1 => {
       numericHeaders.forEach(h2 => {
         // Simple Pearson correlation
-        const x = data.map(d => d[h1] as number);
-        const y = data.map(d => d[h2] as number);
+        const x = data.map(d => Number(d[h1]));
+        const y = data.map(d => Number(d[h2]));
         
         const n = x.length;
         const sumX = x.reduce((a, b) => a + b, 0);
@@ -221,6 +228,10 @@ export const ComputeEngine: React.FC<ComputeEngineProps> = ({ data }) => {
               <Share2 className="w-4 h-4 mr-2" />
               Network
             </TabsTrigger>
+            <TabsTrigger value="manuscript" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-zinc-950 text-zinc-500 font-bold text-xs uppercase tracking-widest px-6 transition-all">
+              <FileText className="w-4 h-4 mr-2" />
+              Manuscript
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -338,7 +349,10 @@ export const ComputeEngine: React.FC<ComputeEngineProps> = ({ data }) => {
                       />
                       <Scatter 
                         name="Data" 
-                        data={data.slice(0, 500).map(d => ({ x: d[scatterX], y: d[scatterY] }))} 
+                        data={data.slice(0, 500).map(d => ({ 
+                          x: Number(d[scatterX]), 
+                          y: Number(d[scatterY]) 
+                        }))} 
                         fill="#18181b" 
                         fillOpacity={0.6}
                       >
@@ -471,6 +485,7 @@ export const ComputeEngine: React.FC<ComputeEngineProps> = ({ data }) => {
 
           {activeSubTab === 'network' && (
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* ... existing network card content ... */}
               <Card className="lg:col-span-1 bg-zinc-900 border-zinc-800 text-white p-6 rounded-[2rem]">
                 <div className="space-y-6">
                   <div>
@@ -552,6 +567,10 @@ export const ComputeEngine: React.FC<ComputeEngineProps> = ({ data }) => {
                 </div>
               </Card>
             </div>
+          )}
+
+          {activeSubTab === 'manuscript' && (
+            <ManuscriptDrafter data={data} />
           )}
         </motion.div>
       </AnimatePresence>
