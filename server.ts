@@ -22,6 +22,10 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     console.log("Starting in production mode, serving from dist...");
+    app.use((req, res, next) => {
+      console.log(`[PROD] Requested: ${req.url}`);
+      next();
+    });
     app.use(express.static(distPath, {
       setHeaders: (res, filePath) => {
         if (filePath.endsWith('index.html')) {

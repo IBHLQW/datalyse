@@ -34,7 +34,7 @@ export const StatSummaryCard: React.FC<StatSummaryCardProps> = ({ columnName, da
       const standardDeviation = ss.standardDeviation(values);
       const min = ss.min(values);
       const max = ss.max(values);
-      const skewness = values.length > 2 ? ss.skewness(values) : 0;
+      const skewness = values.length > 2 ? ss.sampleSkewness(values) : 0;
       
       // Basic Normality Suggestion (very simplified)
       const isNormallyDistributed = Math.abs(skewness) < 0.5;
