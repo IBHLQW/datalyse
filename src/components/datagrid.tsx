@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp, Search, SlidersHorizontal, FilterX, Copy, Check } from 'lucide-react';
-import { cn } from '../lib/utils';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Badge } from './ui/badge';
-import { ScrollArea } from './ui/scroll-area';
-import { DataRow } from '../types';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { DataRow } from '@/types';
 
 interface DataTableProps {
   data: DataRow[];

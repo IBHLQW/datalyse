@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { processFile } from './lib/dataProcessor';
-import { generateDataInsights } from './services/geminiService';
-import { Dashboard } from './components/Dashboard';
-import { DataRow, DataInsight, ProcessedData } from './types';
+import { processFile } from '@/lib/dataProcessor';
+import { generateDataInsights } from '@/services/geminiService';
+import { Dashboard } from '@/components/Dashboard';
+import { DataRow, DataInsight, ProcessedData } from '@/types';
 import { 
   LayoutDashboard, 
   Database, 
@@ -23,10 +23,10 @@ import {
   Hash
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from './lib/utils';
-import { Button } from './components/ui/button';
-import { Badge } from './components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Dialog,
   DialogContent,
@@ -34,13 +34,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./components/ui/dialog";
+} from "@/components/ui/dialog";
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
-import { DataTable as DataGrid } from './components/datagrid';
+import { DataTable as DataGrid } from '@/components/datagrid';
 
 const App: React.FC = () => {
   const [fileData, setFileData] = useState<ProcessedData | null>(null);
