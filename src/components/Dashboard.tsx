@@ -35,9 +35,10 @@ interface DashboardProps {
   data: DataRow[];
   insights: DataInsight | null;
   isGeneratingInsights: boolean;
+  onNavigate: (tab: string) => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ data, insights, isGeneratingInsights }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ data, insights, isGeneratingInsights, onNavigate }) => {
   // Extract simple stats
   const rowCount = data.length;
   const colCount = data.length > 0 ? Object.keys(data[0]).length : 0;
@@ -363,7 +364,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, insights, isGenerati
                   </div>
 
                   <div className="pt-4">
-                    <button className="w-full py-3 bg-zinc-900 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2">
+                    <button 
+                      onClick={() => onNavigate('ghostwriter')}
+                      className="w-full py-3 bg-zinc-900 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2"
+                    >
                       Full Intelligent Report
                       <ArrowUpRight className="w-3 h-3" />
                     </button>

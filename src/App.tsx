@@ -1,3 +1,4 @@
+// v1.0.2 - Integrated data cleaning & sorting features
 import React, { useState, useEffect, useCallback } from 'react';
 import { processFile } from '@/lib/dataProcessor';
 import { cleanData, CleaningOptions } from '@/lib/dataCleaner';
@@ -46,9 +47,11 @@ import 'jspdf-autotable';
 
 import { DataTable as DataGrid } from '@/components/datagrid';
 import { ComputeEngine } from '@/components/ComputeEngine';
+import { ManuscriptDrafter } from '@/components/ManuscriptDrafter';
 
 const App: React.FC = () => {
   const [fileData, setFileData] = useState<ProcessedData | null>(null);
+  const [gridVersion, setGridVersion] = useState(0);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
   const [insights, setInsights] = useState<DataInsight | null>(null);
@@ -74,17 +77,29 @@ const App: React.FC = () => {
     if (!fileData) return;
     
     try {
-      const cleanedRows = cleanData(fileData.rows, options);
+      const cleanedRows = cleanData([...fileData.rows], options);
       const rowsRemoved = fileData.rows.length - cleanedRows.length;
       
-      setFileData({
-        ...fileData,
-        rows: cleanedRows,
-        summary: {
-          ...fileData.summary,
-          rowCount: cleanedRows.length
-        }
+      // Reset insights immediately to provide feedback that data is dirty
+      setInsights(null);
+      
+      setFileData(prev => {
+        if (!prev) return null;
+        const updated = {
+          ...prev,
+          rows: [...cleanedRows],
+          summary: {
+            ...prev.summary,
+            rowCount: cleanedRows.length
+          }
+        };
+        console.log('[App] State updated with cleaned data', { 
+          before: fileData.rows.length, 
+          after: updated.rows.length 
+        });
+        return updated;
       });
+      setGridVersion(v => v + 1);
       
       let message = "Data cleaned successfully";
       if (options.removeDuplicates && rowsRemoved > 0) {
@@ -99,14 +114,15 @@ const App: React.FC = () => {
       
       showNotification(message, 'success');
       
-      // Re-generate insights if data changed significantly
-      if (rowsRemoved > 0 || options.removeNoise) {
-        setIsGeneratingInsights(true);
-        generateDataInsights(cleanedRows).then(newInsights => {
-          setInsights(newInsights);
-          setIsGeneratingInsights(false);
-        });
-      }
+      // Re-generate insights
+      setIsGeneratingInsights(true);
+      generateDataInsights(cleanedRows).then(newInsights => {
+        setInsights(newInsights);
+        setIsGeneratingInsights(false);
+      }).catch(err => {
+        console.error("AI Insight failed", err);
+        setIsGeneratingInsights(false);
+      });
     } catch (err) {
       showNotification("Purge failed: " + (err instanceof Error ? err.message : String(err)), 'error');
     }
@@ -207,8 +223,9 @@ const App: React.FC = () => {
 
   const menuItems = [
     { id: 'dashboard', label: 'Monitor', icon: LayoutDashboard },
-    { id: 'explorer', label: 'Explorer', icon: Database },
+    { id: 'explorer', label: 'Registry', icon: Database },
     { id: 'analytics', label: 'Compute', icon: Activity },
+    { id: 'ghostwriter', label: 'Ghostwriter', icon: Sparkles },
   ];
 
   return (
@@ -330,7 +347,7 @@ const App: React.FC = () => {
                   Insights Engine v3.1
                 </Badge>
                 <h1 className="text-7xl font-bold tracking-tighter text-zinc-950 italic-serif">
-                  <span className="text-zinc-400 underline decoration-zinc-200">Clarify</span>.
+                  Clarify.
                 </h1>
                 <p className="text-zinc-500 text-lg max-w-lg mx-auto leading-relaxed">
                   Advanced ingestion engine for technical datasets. 
@@ -570,6 +587,7 @@ const App: React.FC = () => {
                     data={fileData.rows} 
                     insights={insights} 
                     isGeneratingInsights={isGeneratingInsights} 
+                    onNavigate={(tab) => setActiveTab(tab)}
                   />
                 </motion.div>
               )}
@@ -636,7 +654,7 @@ const App: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex-1 overflow-hidden rounded-2xl border border-zinc-100">
-                      <DataGrid data={fileData.rows} />
+                      <DataGrid key={`grid-${gridVersion}`} data={fileData.rows} />
                     </div>
                   </div>
                 </motion.div>
@@ -650,6 +668,17 @@ const App: React.FC = () => {
                   exit={{ opacity: 0, y: -20 }}
                 >
                   <ComputeEngine data={fileData.rows} />
+                </motion.div>
+              )}
+
+              {activeTab === 'ghostwriter' && (
+                <motion.div
+                  key="ghostwriter"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                >
+                  <ManuscriptDrafter data={fileData.rows} />
                 </motion.div>
               )}
             </AnimatePresence>

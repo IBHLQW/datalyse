@@ -1,3 +1,4 @@
+// v1.0.2 - Enhanced null highlighting
 import React, { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp, Search, SlidersHorizontal, FilterX, Copy, Check, BarChart3, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -230,7 +231,7 @@ export const DataTable: React.FC<DataTableProps> = ({ data }) => {
                       key={i} 
                       className={cn(
                         "group transition-all duration-200",
-                        hasNulls ? "bg-amber-50/30 hover:bg-zinc-950" : "hover:bg-zinc-950"
+                        hasNulls ? "bg-zinc-50/80 hover:bg-zinc-950" : "hover:bg-zinc-950"
                       )}
                     >
                       {columns.map((col) => (
@@ -239,7 +240,7 @@ export const DataTable: React.FC<DataTableProps> = ({ data }) => {
                           className={cn(
                             "px-6 py-4 text-xs font-mono tracking-tight transition-colors group-hover:text-white",
                             (row[col] === null || row[col] === undefined || row[col] === '') 
-                              ? "text-zinc-300 italic group-hover:text-zinc-500" 
+                              ? "text-zinc-300 group-hover:text-zinc-500" 
                               : typeof row[col] === 'number' 
                                 ? "text-emerald-600 group-hover:text-emerald-400" 
                                 : "text-zinc-600"
