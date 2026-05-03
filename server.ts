@@ -25,9 +25,8 @@ async function startServer() {
     
     // Serve static files with specific cache settings
     app.use(express.static(distPath, {
-      maxAge: '1h', // Small cache for assets in case hashes change
+      maxAge: '1h',
       setHeaders: (res, filePath) => {
-        // Absolutely NO CACHE for index.html
         if (filePath.endsWith('index.html')) {
           res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
           res.setHeader('Pragma', 'no-cache');
@@ -38,11 +37,15 @@ async function startServer() {
 
     // SPA Fallback, but only for navigation requests
     app.get('*', (req, res) => {
-      // Exclude asset requests from fallback to prevent 200 OK with HTML content
-      if (req.url.startsWith('/assets/') || req.url.includes('.')) {
+      console.log(`[Request] ${req.method} ${req.url}`);
+      
+      // If it looks like an asset request that wasn't caught by express.static, log it as 404
+      if (req.url.includes('/assets/') || req.url.includes('.')) {
+        console.warn(`[404] Asset not found: ${req.url}`);
         return res.status(404).send('Not found');
       }
       
+      console.log(`[SPA Fallback] Serving index.html for navigation to: ${req.url}`);
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.sendFile(path.join(distPath, 'index.html'));
     });
