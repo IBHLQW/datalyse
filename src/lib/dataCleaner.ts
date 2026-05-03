@@ -46,29 +46,53 @@ export const cleanData = (rows: DataRow[], options: CleaningOptions): DataRow[] 
   // This removes rows where ANY numeric field is an outlier
   if (options.removeOutliers) {
     const beforeCount = cleaned.length;
+    // Get columns that are primarily numeric (even if they are strings that look like numbers)
     const numericColumns = Object.keys(cleaned[0] || {}).filter(col => {
-      const vals = cleaned.map(r => r[col]).filter(v => typeof v === 'number');
-      return vals.length > (cleaned.length * 0.5); // Only if mostly numeric
+      const sample = cleaned.slice(0, 100).map(r => r[col]);
+      let numericCount = 0;
+      sample.forEach(v => {
+        if (typeof v === 'number') numericCount++;
+        else if (typeof v === 'string' && !isNaN(Number(v.replace(/[^0-9.-]+/g, '')))) numericCount++;
+      });
+      return numericCount > (sample.length * 0.5);
     });
 
     numericColumns.forEach(col => {
       const values = cleaned
-        .map(r => r[col] as number)
-        .filter(v => typeof v === 'number' && !isNaN(v))
+        .map(r => {
+          const val = r[col];
+          if (typeof val === 'number') return val;
+          if (typeof val === 'string') {
+            const parsed = Number(val.replace(/[^0-9.-]+/g, ''));
+            return isNaN(parsed) ? null : parsed;
+          }
+          return null;
+        })
+        .filter((v): v is number => v !== null && !isNaN(v))
         .sort((a, b) => a - b);
 
-      if (values.length < 4) return;
+      if (values.length < 10) return; // Need enough data points for IQR
 
-      const q1 = values[Math.floor(values.length / 4)];
-      const q3 = values[Math.floor(values.length * 3 / 4)];
+      const q1 = values[Math.floor(values.length * 0.25)];
+      const q3 = values[Math.floor(values.length * 0.75)];
       const iqr = q3 - q1;
+      
+      // Traditional outlier: 1.5 * IQR
+      // Extreme outlier: 3.0 * IQR
       const lowerBound = q1 - 1.5 * iqr;
       const upperBound = q3 + 1.5 * iqr;
 
       cleaned = cleaned.filter(row => {
         const val = row[col];
-        if (typeof val !== 'number') return true;
-        return val >= lowerBound && val <= upperBound;
+        let numVal: number | null = null;
+        if (typeof val === 'number') numVal = val;
+        else if (typeof val === 'string') {
+          const parsed = Number(val.replace(/[^0-9.-]+/g, ''));
+          numVal = isNaN(parsed) ? null : parsed;
+        }
+        
+        if (numVal === null) return true; // Keep non-numeric or unparseable to be safe
+        return numVal >= lowerBound && numVal <= upperBound;
       });
     });
     console.log(`[Cleaner] Outlier removal removed ${beforeCount - cleaned.length} rows total`);
