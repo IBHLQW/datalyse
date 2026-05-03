@@ -41,6 +41,7 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
 import { DataTable as DataGrid } from '@/components/datagrid';
+import { ComputeEngine } from '@/components/ComputeEngine';
 
 const App: React.FC = () => {
   const [fileData, setFileData] = useState<ProcessedData | null>(null);
@@ -551,12 +552,7 @@ const App: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                 >
-                   <div className="bg-zinc-950 text-white rounded-[2rem] p-12 min-h-[600px] flex flex-col items-center justify-center text-center space-y-6">
-                    <Activity className="w-12 h-12 text-zinc-800 animate-pulse" />
-                    <h2 className="text-3xl font-bold italic-serif">Computation Engine</h2>
-                    <p className="text-zinc-500 max-w-sm font-medium">Advanced statistical modelling and custom calculation pipelines are currently in beta testing.</p>
-                    <Badge variant="outline" className="border-white/10 text-zinc-500 font-mono text-[10px]">COMING SOON_</Badge>
-                  </div>
+                  <ComputeEngine data={fileData.rows} />
                 </motion.div>
               )}
             </AnimatePresence>
